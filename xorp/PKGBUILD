@@ -1,0 +1,33 @@
+pkgname=xorp
+pkgver=1.8.5
+pkgrel=1
+pkgdesc="eXtensible Open Router Platform"
+arch=('i686' 'x86_64')
+url="http://www.xorp.org"
+license=('GPL2')
+source=(http://xorp.org/releases/current/xorp-$pkgver-src.tar.bz2
+	config.boot 
+        xorp-rc
+        xorp.sh)
+depends=('git' 'scons' 'boost' 'openssl' 'libpcap' 'net-tools')
+md5sums=('dfa9569cf9f91214134d1c31c78a6f9e'
+	 '41112a9628a93c943bfa252fefd9c171'
+         '4ae4e4645da6d964ff38cfb643ffbbf6'
+         'de9bdc12e7742e0bdb4e0c9519398488')
+
+build() {
+  cd ${srcdir}/
+
+  sed -i 's/python$/python2/g' $(grep -r "/usr/bin/env python" xorp | sed 's/\(.\):.*/\1/g')
+
+  cd xorp && scons
+}
+
+package() {
+  cd ${srcdir}/xorp
+  scons DESTDIR=${pkgdir} install
+  mkdir -p ${pkgdir}/etc/xorp
+  install -Dm644 ${srcdir}/config.boot ${pkgdir}/etc/xorp/config.boot
+  install -Dm755 ${srcdir}/xorp-rc ${pkgdir}/etc/rc.d/xorp
+  install -Dm755 ${srcdir}/xorp.sh ${pkgdir}/etc/profile.d/xorp.sh
+}

@@ -1,0 +1,32 @@
+pkgname=xorp-git
+pkgver=1
+pkgrel=1
+pkgdesc="eXtensible Open Router Platform"
+arch=('i686' 'x86_64')
+url="http://www.xorp.org"
+license=('GPL2')
+source=(config.boot 
+        xorp
+        xorp.sh)
+depends=('git' 'scons' 'boost' 'openssl' 'libpcap' 'net-tools')
+md5sums=('41112a9628a93c943bfa252fefd9c171'
+         '4ae4e4645da6d964ff38cfb643ffbbf6'
+         'de9bdc12e7742e0bdb4e0c9519398488')
+
+build() {
+  cd ${srcdir}/
+
+  #git clone http://github.com/greearb/xorp.ct.git
+  #sed -i 's/python$/python2/g' $(grep -r "/usr/bin/env python" xorp.ct | sed 's/\(.\):.*/\1/g')
+
+  cd xorp.ct/xorp && scons
+}
+
+package() {
+  cd ${srcdir}/xorp.ct/xorp
+  scons DESTDIR=${pkgdir} install
+  mkdir -p ${pkgdir}/etc/xorp
+  install -Dm644 ${srcdir}/config.boot ${pkgdir}/etc/xorp/config.boot
+  install -Dm755 ${srcdir}/xorp ${pkgdir}/etc/rc.d/xorp
+  install -Dm755 ${srcdir}/xorp.sh ${pkgdir}/etc/profile.d/xorp.sh
+}
