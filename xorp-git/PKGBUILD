@@ -6,7 +6,7 @@ arch=('i686' 'x86_64')
 url="http://www.xorp.org"
 license=('GPL2')
 source=(config.boot 
-        xorp
+        xorp-rc
         xorp.sh)
 depends=('git' 'scons' 'boost' 'openssl' 'libpcap' 'net-tools')
 md5sums=('41112a9628a93c943bfa252fefd9c171'
