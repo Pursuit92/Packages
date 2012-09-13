@@ -1,0 +1,57 @@
+# Maintainer: Josh Chase <jcjoshuachase@gmail.com>
+
+pkgname=openstack
+pkgver=essex
+_novaver=2012.1.2
+_glancever=2012.1.2
+_keystonever=2012.1.2
+_horizonver=2012.1.1
+pkgrel=1
+pkgdesc="OpenStack Cloud Platform"
+arch=('any')
+license=('custom')
+url="https://launchpad.net/nova"
+depends=('python2')
+makedepends=('python2-distribute')
+source=("https://launchpad.net/nova/$pkgver/$_novaver/+download/nova-$_novaver.tar.gz"
+        "https://launchpad.net/glance/$pkgver/$_glancever/+download/glance-$_glancever.tar.gz"
+        "https://launchpad.net/keystone/$pkgver/$_keystonever/+download/keystone-$_keystonever.tar.gz"
+        "https://launchpad.net/horizon/$pkgver/$_horizonver/+download/horizon-$_horizonver.tar.gz")
+md5sums=('e829334fc8ba90160c59801ff372d003'
+         '544496fde64a341a4f39e15f4b258093'
+         '026dfa10e37108b75b92d39cbc449bd0'
+         '61bada14dd7dcc5957a8c50a6728cbbd')
+
+build() {
+  venv=$srcdir/build/opt/openstack
+
+  cd $srcdir
+
+  find . -type f -exec sed -i -e 's|^#!/usr/bin/python$|#!/usr/bin/python2|' \
+    -e 's|^#!/usr/bin/env python$|#!/usr/bin/env python2|' {} +
+
+  cat */tools/pip-requires | sed -e '/^#/ d' -e '/^https\?:\/\// d' -e '/-e/ d' -e 's/[<>=].*//' -e 's/\(.*\)/\L\1/'| sort | uniq > requires
+
+  mkdir -p $venv
+  virtualenv2 $venv
+  $venv/bin/pip install -r requires 
+
+  for i in keystone-$_keystonever glance-$_glancever nova-$_novaver horizon-$_horizonver
+  do
+    pushd $i
+    $venv/bin/python setup.py build
+    $venv/bin/python setup.py install --optimize=1
+    [ -d etc ] && cp -ir etc $venv/
+    popd
+  done
+
+  $venv/bin/pip install python-keystoneclient python-glanceclient python-novaclient
+
+  virtualenv2 --relocatable $venv
+
+
+}
+
+package() {
+  cp -r $srcdir/build/opt $pkgdir
+}
