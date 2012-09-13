@@ -13,22 +13,24 @@ license=('apache')
 url="https://launchpad.net/openstack"
 depends=('python2')
 install='openstack.install'
-makedepends=('python2-distribute')
+makedepends=('python2-virtualenv')
 source=("https://launchpad.net/nova/$pkgver/$_novaver/+download/nova-$_novaver.tar.gz"
         "https://launchpad.net/glance/$pkgver/$_glancever/+download/glance-$_glancever.tar.gz"
         "https://launchpad.net/keystone/$pkgver/$_keystonever/+download/keystone-$_keystonever.tar.gz"
-        "https://launchpad.net/horizon/$pkgver/$_horizonver/+download/horizon-$_horizonver.tar.gz")
+        "https://launchpad.net/horizon/$pkgver/$_horizonver/+download/horizon-$_horizonver.tar.gz"
+	"openstack-profile.sh")
 md5sums=('e829334fc8ba90160c59801ff372d003'
          '544496fde64a341a4f39e15f4b258093'
          '026dfa10e37108b75b92d39cbc449bd0'
-         '61bada14dd7dcc5957a8c50a6728cbbd')
+         '61bada14dd7dcc5957a8c50a6728cbbd'
+         'ce0cb824b43c539d551a29d035f6073b')
 
 builddir=$srcdir/../build
 venv=$builddir/opt/openstack
 
 build() {
 
-  cd $srcdir
+  pushd $srcdir
 
   find . -type f -exec sed -i -e 's|^#!/usr/bin/python$|#!/usr/bin/python2|' \
     -e 's|^#!/usr/bin/env python$|#!/usr/bin/env python2|' {} +
@@ -69,10 +71,14 @@ build() {
 
   virtualenv2 --relocatable $venv
 
+  popd
 
 }
 
 package() {
+  mkdir -p $pkgdir/etc/profile.d/
+  install -Dm755 openstack-profile.sh $pkgdir/etc/profile.d/
   cp -Tr $builddir $pkgdir
   chmod -R g+rwx $pkgdir/opt/openstack
+  chmod -R g+rwx $pkgdir/etc/*
 }

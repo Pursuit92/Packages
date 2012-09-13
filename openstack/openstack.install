@@ -1,10 +1,12 @@
 post_install() {
   groupadd openstack
   chown -R :openstack /opt/openstack
+  chown -R :openstack /etc/{keystone,nova,glance}
 }
 
 post_upgrade() {
   chown -R :openstack /opt/openstack
+  chown -R :openstack /etc/{keystone,nova,glance}
 }
 
 post_remove() {
