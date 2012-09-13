@@ -9,9 +9,10 @@ _horizonver=2012.1.1
 pkgrel=1
 pkgdesc="OpenStack Cloud Platform"
 arch=('any')
-license=('custom')
-url="https://launchpad.net/nova"
+license=('apache')
+url="https://launchpad.net/openstack"
 depends=('python2')
+install='openstack.install'
 makedepends=('python2-distribute')
 source=("https://launchpad.net/nova/$pkgver/$_novaver/+download/nova-$_novaver.tar.gz"
         "https://launchpad.net/glance/$pkgver/$_glancever/+download/glance-$_glancever.tar.gz"
@@ -22,27 +23,46 @@ md5sums=('e829334fc8ba90160c59801ff372d003'
          '026dfa10e37108b75b92d39cbc449bd0'
          '61bada14dd7dcc5957a8c50a6728cbbd')
 
+builddir=$srcdir/../build
+venv=$builddir/opt/openstack
+
 build() {
-  venv=$srcdir/build/opt/openstack
 
   cd $srcdir
 
   find . -type f -exec sed -i -e 's|^#!/usr/bin/python$|#!/usr/bin/python2|' \
     -e 's|^#!/usr/bin/env python$|#!/usr/bin/env python2|' {} +
 
-  cat */tools/pip-requires | sed -e '/^#/ d' -e '/^https\?:\/\// d' -e '/-e/ d' -e 's/[<>=].*//' -e 's/\(.*\)/\L\1/'| sort | uniq > requires
+# Just get the requirements that don't have a specific version
+  cat */tools/pip-requires | sed -e '/^#/ d' -e '/^https\?:\/\// d' -e '/-e/ d' -e '/[<>=].*/ p' | sed -e 's/[<>=].*//' -e 's/\(.*\)/\L\1/'| sort | uniq -u > requires
 
+# Get only the requirements with a specific version
+  cat */tools/pip-requires | sed -e '/^$/ d' -e '/-e/ d' -e '/^https\?:\/\// d' | grep == | sed 's/\(.*\)/\L\1/' | sort | uniq >> requires
+
+# Build the virtualenv and install dependencies
   mkdir -p $venv
   virtualenv2 $venv
   $venv/bin/pip install -r requires 
 
-  for i in keystone-$_keystonever glance-$_glancever nova-$_novaver horizon-$_horizonver
+# install main packages and their config files
+  mkdir $builddir/etc/ -p
+
+  for i in *
   do
-    pushd $i
-    $venv/bin/python setup.py build
-    $venv/bin/python setup.py install --optimize=1
-    [ -d etc ] && cp -ir etc $venv/
-    popd
+    if [ -d $i ]; then
+      pushd $i
+	pwd
+      $venv/bin/python setup.py build
+      $venv/bin/python setup.py install --optimize=1
+      svc=`echo $i | sed s/-.*//`
+      if [ -d etc ] && [ ! -d etc/$svc ] 
+      then
+        cp -Tr etc $builddir/etc/$svc
+      else
+        [ -d etc ] && cp -r etc/$svc $builddir/etc/
+      fi
+      popd
+    fi
   done
 
   $venv/bin/pip install python-keystoneclient python-glanceclient python-novaclient
@@ -53,5 +73,6 @@ build() {
 }
 
 package() {
-  cp -r $srcdir/build/opt $pkgdir
+  cp -Tr $builddir $pkgdir
+  chmod -R g+rwx $pkgdir/opt/openstack
 }

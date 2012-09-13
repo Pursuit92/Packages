@@ -1,0 +1,12 @@
+post_install() {
+  groupadd openstack
+  chown -R :openstack /opt/openstack
+}
+
+post_upgrade() {
+  chown -R :openstack /opt/openstack
+}
+
+post_remove() {
+  groupdel openstack
+}
