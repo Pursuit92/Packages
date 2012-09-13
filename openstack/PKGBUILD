@@ -14,6 +14,11 @@ url="https://launchpad.net/openstack"
 depends=('python2')
 install='openstack.install'
 makedepends=('python2-virtualenv')
+backup=( 'etc/keystone/keystone.conf'
+	 'etc/glance/glance-api.conf'
+	 'etc/glance/glance-registry.conf'
+	 'etc/glance/glance-api-paste.ini'
+	 'etc/glance/glance-registry-paste.ini' )
 source=("https://launchpad.net/nova/$pkgver/$_novaver/+download/nova-$_novaver.tar.gz"
         "https://launchpad.net/glance/$pkgver/$_glancever/+download/glance-$_glancever.tar.gz"
         "https://launchpad.net/keystone/$pkgver/$_keystonever/+download/keystone-$_keystonever.tar.gz"
@@ -35,18 +40,18 @@ build() {
   find . -type f -exec sed -i -e 's|^#!/usr/bin/python$|#!/usr/bin/python2|' \
     -e 's|^#!/usr/bin/env python$|#!/usr/bin/env python2|' {} +
 
-# Just get the requirements that don't have a specific version
+  # Just get the requirements that don't have a specific version
   cat */tools/pip-requires | sed -e '/^#/ d' -e '/^https\?:\/\// d' -e '/-e/ d' -e '/[<>=].*/ p' | sed -e 's/[<>=].*//' -e 's/\(.*\)/\L\1/'| sort | uniq -u > requires
 
-# Get only the requirements with a specific version
+  # Get only the requirements with a specific version
   cat */tools/pip-requires | sed -e '/^$/ d' -e '/-e/ d' -e '/^https\?:\/\// d' | grep == | sed 's/\(.*\)/\L\1/' | sort | uniq >> requires
 
-# Build the virtualenv and install dependencies
+  # Build the virtualenv and install dependencies
   mkdir -p $venv
   virtualenv2 $venv
   $venv/bin/pip install -r requires 
 
-# install main packages and their config files
+  # install main packages and their config files
   mkdir $builddir/etc/ -p
 
   for i in *
@@ -80,5 +85,5 @@ package() {
   install -Dm755 openstack-profile.sh $pkgdir/etc/profile.d/
   cp -Tr $builddir $pkgdir
   chmod -R g+rwx $pkgdir/opt/openstack
-  chmod -R g+rwx $pkgdir/etc/*
+  chmod -R g+rwx $pkgdir/etc/{keystone,glance,nova}
 }
