@@ -1,0 +1,139 @@
+# Libguestfs: Installer: Arch
+# Maintainer: Thomas S Hatch <thatch45 (at) Gmail.com>
+# Contributor: Xiao-Long Chen <chenxiaolong@cxl.epac.to>
+
+pkgname=libguestfs
+pkgver=1.18.7
+pkgrel=1
+pkgdesc="Manages virtual machine images"
+arch=("x86_64")
+url="http://libguestfs.org"
+license=("GPL2" "LGPL2.1")
+depends=("qemu"
+         "augeas"
+         "hivex"
+         "libconfig"
+         "libvirt")
+makedepends=("perl"
+             "perl-io-stringy"
+             "perl-test-pod-coverage"
+             "perl-string-shellquote"
+             "perl-xml-writer"
+             "perl-libintl-perl"
+             "perl-sys-virt"
+             #"ocaml-findlib"
+             "jdk7-openjdk"
+             "python2"
+             #"ocaml"
+             "php"
+             "perl"
+             "pcre"
+             "fuse"
+             "libvirt"
+             "cdrkit"
+             "libxml2"
+             "zfs-fuse"
+             "gperf"
+             "erlang"
+             "ruby"
+             "ghc")
+optdepends=("python2: Python bindings"
+            #"ocaml: Ocaml libs"
+            "php: PHP bindings"
+            "perl: Perl Bindings"
+            "java-environment: Java Bindings"
+            "erlang: Erlang Bindings"
+            "ruby: Ruby Bindings"
+            "ghc: Haskell Bindings")
+provides=("guestfish=${pkgver}")
+options=(!emptydirs !libtool)
+source=("http://libguestfs.org/download/${pkgver%.*}-stable/${pkgname}-${pkgver}.tar.gz"
+        "http://libguestfs.org/download/binaries/appliance/appliance-1.18.5.tar.xz"
+        'guestfsd.service'
+        '99-guestfsd.rules'
+        'guestfsd.rc.d'
+        '0001-HACK-Add-vga-cirrus-to-work-around-virtio-hang.patch::https://bugzilla.redhat.com/attachment.cgi?id=548223&action=diff&context=patch&collapsed=&headers=1&format=raw')
+sha512sums=('f98a5dd4a238d7844c4f54110bd8388e678d395e62af5fad20d297d865c4b8a5bfda2d818af314cc6794898f7c5c871837239e58a2a6af47d16ec9d9f1087cca'
+            '4603ac8ae8bff8d9fec5b79368577c443af05b040ebc4fce66f3944fe0632d53440f29582cbc08f66070bd062559ed3fa9d3dce85bf6002d63a3872bfe3e121e'
+            'c2deb2c7776ea4a763e1cb92a9fda37b5764d663c6db145f83b986b1327d2cadb744f4793b2a2665620c041cf693fba2b1a948aab7babc87c8aef820bf9368f0'
+            '0b18925a29c798a9759e5336f719b811aeb0b41db205f198b4bd02c6a2902848e1911cd82a93fb8a72e33f883f882272b7975dfd55d9a7c69d362620b26509c3'
+            '47ddfe1b44202bd29cdc48114863ffba9d72754401de439a1b404d9476313bf39ca8a9c1110150849231bcd8f7e182d6ee1ae8d675de825ce2b170d78feca80d'
+            '30e5729b3d084867b3ec8eb98c40a3733af7da7fa014fdc86d12ba6be94ed2338baf381a1f7aa6cfe26a94e0e962e532fa7d88bcb2ea8dfff089ab4e6ea5902b')
+
+build() {
+  cd "${srcdir}/${pkgname}-${pkgver}"
+  export CXXFLAGS="${CXXFLAGS} -I/usr/include/libxml2"
+  export CFLAGS="${CFLAGS} -I/usr/include/libxml2"
+
+  # Work around hang when loading virtio-blk.ko in the appliance (BZ: 768508)
+  #patch -Np1 -i "${srcdir}/0001-HACK-Add-vga-cirrus-to-work-around-virtio-hang.patch"
+
+  # Cannot find gmodule on later versions of glib
+  CFLAGS="${CFLAGS} $(pkg-config --cflags --libs gmodule-2.0)"
+
+  #autoreconf -vfi
+
+  LIBS="-lrt" ./configure \
+    PYTHON=python2 \
+    --prefix=/usr \
+    --libdir=/usr/lib \
+    --mandir=/usr/share/man \
+    --sysconfdir=/etc \
+    --with-qemu="qemu-kvm qemu" \
+    --with-drive-if=virtio \
+    --enable-install-daemon \
+    `# ocaml bindings cant be built right now` \
+    --disable-ocaml \
+    `# gobject-introspection segfaults` \
+    --enable-introspection=no \
+    --disable-appliance --disable-daemon
+
+  # From Fedora spec - INSTALLDIRS installs Perl libs to vendor dir instead of the site dir
+  make -j1 V=1 INSTALLDIRS=vender
+}
+
+check() {
+
+  # skip checks
+  return 0
+
+  cd "${srcdir}/${pkgname}-${pkgver}"
+  export LIBGUESTFS_DEBUG=1
+  export LIBGUESTFS_TRACE=1
+  export SKIP_TEST_CHECKSUM_DEVICE=1
+
+  # From Fedora spec - Work around 'test-getlogin_r.c:55: assertion failed' in Gnulib tests
+  pushd gnulib/tests
+  borked=test-getlogin_r
+  make ${borked}
+  rm ${borked}
+  touch ${borked}
+  chmod +x ${borked}
+  popd
+
+  # Tests currently segfault
+  #make check
+}
+
+package() {
+  cd "${srcdir}/${pkgname}-${pkgver}"
+  make DESTDIR="${pkgdir}/" INSTALLDIRS=vendor install
+
+  # Install systemd service from Fedora
+  install -dm755 "${pkgdir}/usr/lib/systemd/system/"
+  install -m644 "${srcdir}/guestfsd.service" "${pkgdir}/usr/lib/systemd/system/"
+
+  # udev rules
+  install -dm755 "${pkgdir}/etc/udev/rules.d/"
+  install -m644 "${srcdir}/99-guestfsd.rules" "${pkgdir}/etc/udev/rules.d/"
+
+  # Translation of the Fedora systemd service file to Arch Linux's init system
+  install -dm755 "${pkgdir}/etc/rc.d/"
+  install -m755 "${srcdir}/guestfsd.rc.d" "${pkgdir}/etc/rc.d/guestfsd"
+
+  # Install fixed appliance
+  install -dm755 $pkgdir/usr/lib/guestfs
+  install -m755 $srcdir/appliance/* $pkgdir/usr/lib/guestfs
+}
+
+# vim:set ts=2 sw=2 et:
