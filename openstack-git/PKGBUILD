@@ -22,14 +22,6 @@ depends=('python2'
 )
 groups=openstack-essex
 makedepends=('python2-virtualenv')
-source=("https://launchpad.net/nova/$pkgver/$_novaver/+download/nova-$_novaver.tar.gz"
-        "https://launchpad.net/glance/$pkgver/$_glancever/+download/glance-$_glancever.tar.gz"
-        "https://launchpad.net/keystone/$pkgver/$_keystonever/+download/keystone-$_keystonever.tar.gz"
-	"https://launchpad.net/swift/$pkgver/$_swiftver/+download/swift-$_swiftver.tar.gz")
-md5sums=('e829334fc8ba90160c59801ff372d003'
-         '544496fde64a341a4f39e15f4b258093'
-         '026dfa10e37108b75b92d39cbc449bd0'
-	 '785ae9ba4e1f6fc256cd6a697bb2861f')
 
 builddir=$srcdir/../build
 venv=$builddir/opt/openstack-essex
@@ -37,6 +29,14 @@ venv=$builddir/opt/openstack-essex
 build() {
 
   pushd $srcdir
+  for i in ${pkgname[*]}
+  do
+    if [ -d $i ]; then
+      echo "Directory found, not cloning."
+    else
+      git clone https://github.com/openstack/$i $i --depth=1 --branch stable/essex
+    fi
+  done
 
   find . -type f -exec sed -i -e 's|^#!/usr/bin/python$|#!/usr/bin/python2|' \
     -e 's|^#!/usr/bin/env python$|#!/usr/bin/env python2|' {} +
@@ -45,16 +45,19 @@ build() {
   # Build the virtualenv and install dependencies
   mkdir -p $venv/{nova,keystone,glance} /tmp/piptemp $builddir/etc
 
+echo HEY IT\'S HERE
+  pwd
   for i in *
   do
     if [ -d $i ]; then
   
-      svc=$(echo $i | sed 's/-.*//')
+      svc=$i
       virtualenv2 $venv/$svc
     
       [ -e $i/tools/pip-requires ] && $venv/$svc/bin/pip install --download-cache /tmp/piptemp -r $i/tools/pip-requires
     
       pushd $i
+      pwd
       $venv/$svc/bin/python setup.py build
       popd
     
@@ -68,7 +71,7 @@ build() {
 
 _package() {
   svc=$1
-  pushd $srcdir/$svc-*
+  pushd $srcdir/$svc
   $venv/$svc/bin/python setup.py install --optimize=1
   if [ ! -d etc/$svc ] 
   then
