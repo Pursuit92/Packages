@@ -3,11 +3,6 @@
 pkgname=openstack-essex
 pkgver=essex
 _components=('nova' 'glance' 'keystone' 'swift')
-_novaver=2012.1.2
-_glancever=2012.1.2
-_keystonever=2012.1.2
-_horizonver=2012.1.1
-_swiftver=1.4.8
 pkgrel=1
 pkgdesc="OpenStack Cloud Platform"
 arch=('any')
@@ -20,6 +15,7 @@ depends=('python2'
          'libguestfs'
          'dnsmasq'
          'libxslt' )
+conflicts=openstack
 backup=( 'etc/nova/nova.conf'
          'etc/nova/api-paste.ini'
          'etc/glance/glance-api.conf'
@@ -63,7 +59,8 @@ build() {
     if [ -d $i ]; then
       echo "Directory found, not cloning."
     else
-      git clone https://github.com/openstack/$i $i --depth=1 --branch stable/essex
+      git clone https://github.com/openstack/$i $i \
+        --depth=1 --branch stable/essex
     fi
   done
 
@@ -93,7 +90,6 @@ build() {
   done
 
   popd
-exit 1
 }
 
 package() {
@@ -118,39 +114,4 @@ package() {
   done
   cp -Tr $venv $pkgdir/opt/openstack-essex
   cp -Tr $builddir/etc $pkgdir/etc
-}
-
-package_nova() {
-depends=('bridge-utils'
-         'libxslt'
-         'ebtables'
-         'libguestfs'
-         'dnsmasq')
-  backup=( 'etc/nova/nova.conf'
-           'etc/nova/api-paste.ini')
-  _package nova
-}
-
-package_glance() {
-  backup=( 'etc/nova/nova.conf'
-           'etc/nova/api-paste.ini')
-  backup=( 'etc/glance/glance-api.conf'
-           'etc/glance/glance-registry.conf'
-           'etc/glance/glance-api-paste.ini'
-           'etc/glance/glance-registry-paste.ini' )
-  backup=( 'etc/keystone/keystone.conf' )
-  depends=( 'libxslt' )
-  _package glance
-}
-
-package_keystone() {
-  backup=( 'etc/keystone/keystone.conf' )
-  depends=( 'libxslt' )
-  _package keystone
-}
-
-package_swift() {
-#  backup=( 'etc/nova/nova.conf'
-#           'etc/nova/api-paste.ini')
-  _package swift
 }
