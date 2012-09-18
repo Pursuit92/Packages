@@ -1,0 +1,9 @@
+[Unit]
+Description=SCSI Target Service
+
+[Service]
+ExecStart=tgtadm --op update --mode sys --name State
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

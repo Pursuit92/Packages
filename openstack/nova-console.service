@@ -1,0 +1,9 @@
+[Unit]
+Description=Nova Console Service
+
+[Service]
+ExecStart=/opt/openstack-essex/nova/bin/nova-console
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

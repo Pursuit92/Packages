@@ -1,0 +1,10 @@
+[Unit]
+Description=Nova API Service
+Wants=libvirt.service
+
+[Service]
+ExecStart=/opt/openstack-essex/nova/bin/nova-compute
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

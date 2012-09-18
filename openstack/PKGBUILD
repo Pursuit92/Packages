@@ -13,23 +13,39 @@ arch=('any')
 license=('apache')
 url="https://launchpad.net/openstack"
 depends=('python2'
-         #'rabbitmq'
-         #bridge-utils'
-         #libxslt'
-         #ebtables'
-         #libguestfs'
-         #dnsmasq')
 )
 groups=openstack-essex
 makedepends=('python2-virtualenv')
 source=("https://launchpad.net/nova/$pkgver/$_novaver/+download/nova-$_novaver.tar.gz"
         "https://launchpad.net/glance/$pkgver/$_glancever/+download/glance-$_glancever.tar.gz"
         "https://launchpad.net/keystone/$pkgver/$_keystonever/+download/keystone-$_keystonever.tar.gz"
-	"https://launchpad.net/swift/$pkgver/$_swiftver/+download/swift-$_swiftver.tar.gz")
+        "https://launchpad.net/swift/$pkgver/$_swiftver/+download/swift-$_swiftver.tar.gz"
+        "glance-api.service"
+        "glance-registry.service"
+        "keystone.service"
+        "nova-api.service"
+        "nova-cert.service"
+        "nova-compute.service"
+        "nova-console.service"
+        "nova-consoleauth.service"
+        "nova-network.service"
+        "nova-scheduler.service"
+        "nova-volume.service")
 md5sums=('e829334fc8ba90160c59801ff372d003'
          '544496fde64a341a4f39e15f4b258093'
          '026dfa10e37108b75b92d39cbc449bd0'
-	 '785ae9ba4e1f6fc256cd6a697bb2861f')
+         '785ae9ba4e1f6fc256cd6a697bb2861f'
+         '593ac14275831ea610eafe366140b454'
+         'e87a5b58ef916128ba9e8cde65d46f1f'
+         '8902d8552ea9e4f8a3f3a6885e77b478'
+         'adfe75fec801ba8dd808c16a505070b3'
+         'c697788e304f1af9b247edd51f29fa6d'
+         '1c3c6bcc1c7f83c27a797a216236b117'
+         'f7d01e8e2c828cbd44e70ad6c4929e03'
+         'f57b9da4cc8d8ab875253015de150da0'
+         '344d924112d788bad5eec15953f0d065'
+         'cedee4dca70c668b860440f216333e93'
+         '5dc7a1e82fb80dffd86ba3c6d59ed7c7')
 
 builddir=$srcdir/../build
 venv=$builddir/opt/openstack-essex
@@ -43,21 +59,24 @@ build() {
 
 
   # Build the virtualenv and install dependencies
-  mkdir -p $venv/{nova,keystone,glance} /tmp/piptemp $builddir/etc
+  mkdir -p /tmp/piptemp $builddir/etc
 
   for i in *
   do
     if [ -d $i ]; then
   
       svc=$(echo $i | sed 's/-.*//')
+
+      mkdir -p $venv/$svc
+
       virtualenv2 $venv/$svc
     
       [ -e $i/tools/pip-requires ] && $venv/$svc/bin/pip install --download-cache /tmp/piptemp -r $i/tools/pip-requires
+      [[ $svc == nova ]] && $venv/$svc/bin/pip install keystone
     
       pushd $i
       $venv/$svc/bin/python setup.py build
       popd
-    
   
     fi
   done
@@ -80,12 +99,20 @@ _package() {
 
   virtualenv2 --relocatable $venv/$svc
   
-  mkdir -p $pkgdir/{etc,opt/openstack-essex/$svc}
+  mkdir -p $pkgdir/{etc,usr/lib/systemd/system,opt/openstack-essex/$svc}
+  for i in $srcdir/$svc*service; do
+    install -Dm755 $i $pkgdir/usr/lib/systemd/system/
+  done
   cp -Tr $venv/$svc $pkgdir/opt/openstack-essex/$svc
   cp -Tr $builddir/etc/$svc $pkgdir/etc/$svc
 }
 
 package_nova() {
+depends=('bridge-utils'
+         'libxslt'
+         'ebtables'
+         'libguestfs'
+         'dnsmasq')
   backup=( 'etc/nova/nova.conf'
            'etc/nova/api-paste.ini')
   _package nova
@@ -106,7 +133,5 @@ package_keystone() {
 }
 
 package_swift() {
-#  backup=( 'etc/nova/nova.conf'
-#           'etc/nova/api-paste.ini')
   _package swift
 }

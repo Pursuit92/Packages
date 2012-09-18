@@ -1,0 +1,9 @@
+[Unit]
+Description=Glance API Service
+
+[Service]
+ExecStart=/opt/openstack-essex/glance/bin/glance-api
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=Nova API Service
+
+[Service]
+ExecStart=/opt/openstack-essex/nova/bin/nova-volume
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

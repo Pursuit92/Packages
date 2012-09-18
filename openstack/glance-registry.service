@@ -1,0 +1,9 @@
+[Unit]
+Description=Glance Image Registry Service
+
+[Service]
+ExecStart=/opt/openstack-essex/glance/bin/glance-registry
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

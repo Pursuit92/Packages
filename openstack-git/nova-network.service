@@ -1,0 +1,9 @@
+[Unit]
+Description=Nova Network Service
+
+[Service]
+ExecStart=/opt/openstack-essex/nova/bin/nova-network
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
