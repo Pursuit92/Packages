@@ -2,7 +2,7 @@
 Description=Nova Cert Service
 
 [Service]
-ExecStart=/opt/openstack-essex/nova/bin/nova-cert
+ExecStart=/opt/openstack-essex/bin/nova-cert
 Restart=always
 
 [Install]

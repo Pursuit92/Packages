@@ -2,7 +2,7 @@
 Description=Glance API Service
 
 [Service]
-ExecStart=/opt/openstack-essex/glance/bin/glance-api
+ExecStart=/opt/openstack-essex/bin/glance-api
 Restart=always
 
 [Install]

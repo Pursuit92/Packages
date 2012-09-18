@@ -2,7 +2,7 @@
 Description=Nova Scheduler Service
 
 [Service]
-ExecStart=/opt/openstack-essex/nova/bin/nova-scheduler
+ExecStart=/opt/openstack-essex/bin/nova-scheduler
 Restart=always
 
 [Install]

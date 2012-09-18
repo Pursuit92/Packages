@@ -1,7 +1,8 @@
 # Maintainer: Josh Chase <jcjoshuachase@gmail.com>
 
-pkgname=('nova' 'glance' 'keystone' 'swift')
+pkgname=openstack-essex
 pkgver=essex
+_components=('nova' 'glance' 'keystone' 'swift')
 _novaver=2012.1.2
 _glancever=2012.1.2
 _keystonever=2012.1.2
@@ -12,7 +13,20 @@ pkgdesc="OpenStack Cloud Platform"
 arch=('any')
 license=('apache')
 url="https://launchpad.net/openstack"
-depends=('python2')
+depends=('python2'
+         'bridge-utils'
+         'libxslt'
+         'ebtables'
+         'libguestfs'
+         'dnsmasq'
+         'libxslt' )
+backup=( 'etc/nova/nova.conf'
+         'etc/nova/api-paste.ini'
+         'etc/glance/glance-api.conf'
+         'etc/glance/glance-registry.conf'
+         'etc/glance/glance-api-paste.ini'
+         'etc/glance/glance-registry-paste.ini'
+         'etc/keystone/keystone.conf' )
 source=("glance-api.service"
         "glance-registry.service"
         "keystone.service"
@@ -24,17 +38,17 @@ source=("glance-api.service"
         "nova-network.service"
         "nova-scheduler.service"
         "nova-volume.service")
-md5sums=('593ac14275831ea610eafe366140b454'
-         'e87a5b58ef916128ba9e8cde65d46f1f'
-         '8902d8552ea9e4f8a3f3a6885e77b478'
-         'adfe75fec801ba8dd808c16a505070b3'
-         'c697788e304f1af9b247edd51f29fa6d'
-         '1c3c6bcc1c7f83c27a797a216236b117'
-         'f7d01e8e2c828cbd44e70ad6c4929e03'
-         'f57b9da4cc8d8ab875253015de150da0'
-         '344d924112d788bad5eec15953f0d065'
-         'cedee4dca70c668b860440f216333e93'
-         '5dc7a1e82fb80dffd86ba3c6d59ed7c7')
+md5sums=( '07b389badd602f3e190ff449bf92fb51'
+          'f9c28f7581bffa1265024e86ddb06dc8'
+          '902637f1d46089e8279c51825f958099'
+          '7f01a6291565bb19e4e0575dffd48826'
+          '46a6a2efaf91090834b126b2d5c1f4ee'
+          'd16a6d9830c16eafb637aeeb1b2fe532'
+          'e449bc9cf342b664c2ffa511ad6ff54b'
+          '7a374a4f65694167cad39b1698270897'
+          'e1594716f862bc0fb04a4d02f5c35740'
+          '67971cad4ee2da21e382a87bef392162'
+          '5691cd8ca2636718c8c715389ae26978')
 groups=openstack-essex
 makedepends=('python2-virtualenv')
 
@@ -44,7 +58,7 @@ venv=$builddir/opt/openstack-essex
 build() {
 
   pushd $srcdir
-  for i in ${pkgname[*]}
+  for i in ${_components[*]}
   do
     if [ -d $i ]; then
       echo "Directory found, not cloning."
@@ -58,23 +72,20 @@ build() {
 
 
   # Build the virtualenv and install dependencies
-  mkdir -p /tmp/piptemp $builddir/etc
+  mkdir -p $venv /tmp/piptemp $builddir/etc
+  virtualenv2 $venv/
 
   for i in *
   do
     if [ -d $i ]; then
   
       svc=$i
-      mkdir -p $venv/$svc
 
-      virtualenv2 $venv/$svc
-    
-      [ -e $i/tools/pip-requires ] && $venv/$svc/bin/pip install --download-cache /tmp/piptemp -r $i/tools/pip-requires
-      [[ $svc == nova ]] && $venv/$svc/bin/pip install keystone
+      [ -e $i/tools/pip-requires ] && $venv/bin/pip install --download-cache /tmp/piptemp -r $i/tools/pip-requires
+      [[ $svc == nova ]] && $venv/bin/pip install keystone
     
       pushd $i
-      pwd
-      $venv/$svc/bin/python setup.py build
+      $venv/bin/python setup.py build
       popd
     
   
@@ -82,29 +93,31 @@ build() {
   done
 
   popd
-
+exit 1
 }
 
-_package() {
-  svc=$1
-  pushd $srcdir/$svc
-  $venv/$svc/bin/python setup.py install --optimize=1
-  if [ ! -d etc/$svc ] 
-  then
-    cp -Tr etc $builddir/etc/$svc
-  else
-    cp -r etc/$svc $builddir/etc/
-  fi
-  popd
+package() {
+  for i in ${_components[*]}; do
+    svc=$i
+    pushd $srcdir/$svc
+    $venv/bin/python setup.py install --optimize=1
+    if [ ! -d etc/$svc ] 
+    then
+      cp -Tr etc $builddir/etc/$svc
+    else
+      cp -r etc/$svc $builddir/etc/
+    fi
+    popd
+  done
 
-  virtualenv2 --relocatable $venv/$svc
+  virtualenv2 --relocatable $venv/
   
-  mkdir -p $pkgdir/{etc,usr/lib/systemd/system,opt/openstack-essex/$svc}
-  for i in $srcdir/$svc*service; do
+  mkdir -p $pkgdir/{usr/lib/systemd/system,opt/}
+  for i in $srcdir/*service; do
     install -Dm755 $i $pkgdir/usr/lib/systemd/system/
   done
-  cp -Tr $venv/$svc $pkgdir/opt/openstack-essex/$svc
-  cp -Tr $builddir/etc/$svc $pkgdir/etc/$svc
+  cp -Tr $venv $pkgdir/opt/openstack-essex
+  cp -Tr $builddir/etc $pkgdir/etc
 }
 
 package_nova() {
@@ -119,10 +132,14 @@ depends=('bridge-utils'
 }
 
 package_glance() {
+  backup=( 'etc/nova/nova.conf'
+           'etc/nova/api-paste.ini')
   backup=( 'etc/glance/glance-api.conf'
            'etc/glance/glance-registry.conf'
            'etc/glance/glance-api-paste.ini'
            'etc/glance/glance-registry-paste.ini' )
+  backup=( 'etc/keystone/keystone.conf' )
+  depends=( 'libxslt' )
   _package glance
 }
 
