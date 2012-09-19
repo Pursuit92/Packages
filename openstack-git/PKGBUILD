@@ -108,7 +108,7 @@ package() {
 
   virtualenv2 --relocatable $venv/
   
-  mkdir -p $pkgdir/{usr/lib/systemd/system,opt/}
+  mkdir -p $pkgdir/{usr/lib/systemd/system,var/lib/openstack/{images,instances},opt/}
   for i in $srcdir/*service; do
     install -Dm755 $i $pkgdir/usr/lib/systemd/system/
   done
