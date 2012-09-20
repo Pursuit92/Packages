@@ -20,7 +20,7 @@ source=(https://github.com/fujita/tgt/zipball/v$pkgver tgt.service)
 
 noextract=()
 md5sums=('7829e36afce394284585b08fbf990116'
-         '68835458b55a888571120375777eedb7')
+         'beecca9489c14e6213a232f053edc59f')
 
 build() {
   cd "$srcdir/fujita-tgt-3bf5573"
