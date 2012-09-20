@@ -89,6 +89,8 @@ build() {
     fi
   done
 
+  $venv/bin/pip install python-keystoneclient
+
   popd
 }
 
