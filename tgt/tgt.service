@@ -2,7 +2,10 @@
 Description=SCSI Target Service
 
 [Service]
-ExecStart=tgtadm --op update --mode sys --name State
+Type=forking
+ExecStart=/etc/rc.d/tgt start
+ExecStop=/etc/rc.d/tgt stop
+ExecRestart=/etc/rc.d/tgt restart
 Restart=always
 
 [Install]
