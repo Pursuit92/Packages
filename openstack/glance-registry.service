@@ -2,7 +2,7 @@
 Description=Glance Image Registry Service
 
 [Service]
-ExecStart=/opt/openstack-essex/glance/bin/glance-registry
+ExecStart=/opt/openstack-essex/bin/glance-registry
 Restart=always
 
 [Install]

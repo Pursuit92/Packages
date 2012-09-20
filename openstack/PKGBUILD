@@ -1,7 +1,8 @@
 # Maintainer: Josh Chase <jcjoshuachase@gmail.com>
 
-pkgname=('nova' 'glance' 'keystone' 'swift')
+pkgname=openstack
 pkgver=essex
+_components=('nova' 'glance' 'keystone') # 'swift'
 _novaver=2012.1.2
 _glancever=2012.1.2
 _keystonever=2012.1.2
@@ -9,17 +10,28 @@ _horizonver=2012.1.1
 _swiftver=1.4.8
 pkgrel=1
 pkgdesc="OpenStack Cloud Platform"
-arch=('any')
+arch=('i686' 'x86_64')
 license=('apache')
 url="https://launchpad.net/openstack"
 depends=('python2'
-)
-groups=openstack-essex
-makedepends=('python2-virtualenv')
+         'bridge-utils'
+         'libxslt'
+         'ebtables'
+         'libguestfs'
+         'dnsmasq'
+         'libxslt' )
+conflicts=openstack-git
+backup=( 'etc/nova/nova.conf'
+         'etc/nova/api-paste.ini'
+         'etc/glance/glance-api.conf'
+         'etc/glance/glance-registry.conf'
+         'etc/glance/glance-api-paste.ini'
+         'etc/glance/glance-registry-paste.ini'
+         'etc/keystone/keystone.conf' )
 source=("https://launchpad.net/nova/$pkgver/$_novaver/+download/nova-$_novaver.tar.gz"
         "https://launchpad.net/glance/$pkgver/$_glancever/+download/glance-$_glancever.tar.gz"
         "https://launchpad.net/keystone/$pkgver/$_keystonever/+download/keystone-$_keystonever.tar.gz"
-        "https://launchpad.net/swift/$pkgver/$_swiftver/+download/swift-$_swiftver.tar.gz"
+#        "https://launchpad.net/swift/$pkgver/$_swiftver/+download/swift-$_swiftver.tar.gz"
         "glance-api.service"
         "glance-registry.service"
         "keystone.service"
@@ -34,104 +46,82 @@ source=("https://launchpad.net/nova/$pkgver/$_novaver/+download/nova-$_novaver.t
 md5sums=('e829334fc8ba90160c59801ff372d003'
          '544496fde64a341a4f39e15f4b258093'
          '026dfa10e37108b75b92d39cbc449bd0'
-         '785ae9ba4e1f6fc256cd6a697bb2861f'
-         '593ac14275831ea610eafe366140b454'
-         'e87a5b58ef916128ba9e8cde65d46f1f'
-         '8902d8552ea9e4f8a3f3a6885e77b478'
-         'adfe75fec801ba8dd808c16a505070b3'
-         'c697788e304f1af9b247edd51f29fa6d'
-         '1c3c6bcc1c7f83c27a797a216236b117'
-         'f7d01e8e2c828cbd44e70ad6c4929e03'
-         'f57b9da4cc8d8ab875253015de150da0'
-         '344d924112d788bad5eec15953f0d065'
-         'cedee4dca70c668b860440f216333e93'
-         '5dc7a1e82fb80dffd86ba3c6d59ed7c7')
+#         '785ae9ba4e1f6fc256cd6a697bb2861f'
+          '07b389badd602f3e190ff449bf92fb51'
+          'f9c28f7581bffa1265024e86ddb06dc8'
+          '902637f1d46089e8279c51825f958099'
+          '7f01a6291565bb19e4e0575dffd48826'
+          '46a6a2efaf91090834b126b2d5c1f4ee'
+          'd16a6d9830c16eafb637aeeb1b2fe532'
+          'e449bc9cf342b664c2ffa511ad6ff54b'
+          '7a374a4f65694167cad39b1698270897'
+          'e1594716f862bc0fb04a4d02f5c35740'
+          '67971cad4ee2da21e382a87bef392162'
+          '5691cd8ca2636718c8c715389ae26978')
+makedepends=('python2-virtualenv')
 
 builddir=$srcdir/../build
-venv=$builddir/opt/openstack-essex
+venv=$builddir/opt/openstack
 
-build() {
+_prep_source() {
 
   pushd $srcdir
 
   find . -type f -exec sed -i -e 's|^#!/usr/bin/python$|#!/usr/bin/python2|' \
     -e 's|^#!/usr/bin/env python$|#!/usr/bin/env python2|' {} +
 
+  popd
+}
+
+build() {
+  _prep_source
+  pushd $srcdir
 
   # Build the virtualenv and install dependencies
-  mkdir -p /tmp/piptemp $builddir/etc
+  mkdir -p $venv /tmp/piptemp $builddir/etc
+  virtualenv2 $venv/
 
   for i in *
   do
     if [ -d $i ]; then
   
-      svc=$(echo $i | sed 's/-.*//')
+      svc=`echo $i | sed s/-.*//`
 
-      mkdir -p $venv/$svc
-
-      virtualenv2 $venv/$svc
-    
-      [ -e $i/tools/pip-requires ] && $venv/$svc/bin/pip install --download-cache /tmp/piptemp -r $i/tools/pip-requires
-      [[ $svc == nova ]] && $venv/$svc/bin/pip install keystone
+      [ -e $i/tools/pip-requires ] && $venv/bin/pip install --download-cache /tmp/piptemp -r $i/tools/pip-requires
     
       pushd $i
-      $venv/$svc/bin/python setup.py build
+      $venv/bin/python setup.py build
       popd
+    
   
     fi
   done
 
-  popd
+  $venv/bin/pip install python-keystoneclient
 
+  popd
 }
 
-_package() {
-  svc=$1
-  pushd $srcdir/$svc-*
-  $venv/$svc/bin/python setup.py install --optimize=1
-  if [ ! -d etc/$svc ] 
-  then
-    cp -Tr etc $builddir/etc/$svc
-  else
-    cp -r etc/$svc $builddir/etc/
-  fi
-  popd
+package() {
+  for i in ${_components[*]}; do
+    svc=$i
+    pushd $srcdir/$svc*
+    $venv/bin/python setup.py install --optimize=1
+    if [ ! -d etc/$svc ] 
+    then
+      cp -Tr etc $builddir/etc/$svc
+    else
+      cp -r etc/$svc $builddir/etc/
+    fi
+    popd
+  done
 
-  virtualenv2 --relocatable $venv/$svc
+  virtualenv2 --relocatable $venv/
   
-  mkdir -p $pkgdir/{etc,usr/lib/systemd/system,opt/openstack-essex/$svc}
-  for i in $srcdir/$svc*service; do
+  mkdir -p $pkgdir/{usr/lib/systemd/system,var/lib/openstack/{images,instances},opt/}
+  for i in $srcdir/*service; do
     install -Dm755 $i $pkgdir/usr/lib/systemd/system/
   done
-  cp -Tr $venv/$svc $pkgdir/opt/openstack-essex/$svc
-  cp -Tr $builddir/etc/$svc $pkgdir/etc/$svc
-}
-
-package_nova() {
-depends=('bridge-utils'
-         'libxslt'
-         'ebtables'
-         'libguestfs'
-         'dnsmasq')
-  backup=( 'etc/nova/nova.conf'
-           'etc/nova/api-paste.ini')
-  _package nova
-}
-
-package_glance() {
-  backup=( 'etc/glance/glance-api.conf'
-           'etc/glance/glance-registry.conf'
-           'etc/glance/glance-api-paste.ini'
-           'etc/glance/glance-registry-paste.ini' )
-  _package glance
-}
-
-package_keystone() {
-  backup=( 'etc/keystone/keystone.conf' )
-  depends=( 'libxslt' )
-  _package keystone
-}
-
-package_swift() {
-  _package swift
+  cp -Tr $venv $pkgdir/opt/openstack
+  cp -Tr $builddir/etc $pkgdir/etc
 }

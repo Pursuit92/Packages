@@ -1,11 +1,11 @@
 # Maintainer: Josh Chase <jcjoshuachase@gmail.com>
 
-pkgname=openstack-essex
+pkgname=openstack-git
 pkgver=essex
 _components=('nova' 'glance' 'keystone' 'swift')
 pkgrel=1
 pkgdesc="OpenStack Cloud Platform"
-arch=('any')
+arch=('i686' 'x86_64')
 license=('apache')
 url="https://launchpad.net/openstack"
 depends=('python2'
@@ -45,13 +45,12 @@ md5sums=( '07b389badd602f3e190ff449bf92fb51'
           'e1594716f862bc0fb04a4d02f5c35740'
           '67971cad4ee2da21e382a87bef392162'
           '5691cd8ca2636718c8c715389ae26978')
-groups=openstack-essex
 makedepends=('python2-virtualenv')
 
 builddir=$srcdir/../build
-venv=$builddir/opt/openstack-essex
+venv=$builddir/opt/openstack
 
-build() {
+_prep_source() {
 
   pushd $srcdir
   for i in ${_components[*]}
@@ -67,6 +66,12 @@ build() {
   find . -type f -exec sed -i -e 's|^#!/usr/bin/python$|#!/usr/bin/python2|' \
     -e 's|^#!/usr/bin/env python$|#!/usr/bin/env python2|' {} +
 
+  popd
+}
+
+build() {
+  _prep_source
+  pushd $srcdir
 
   # Build the virtualenv and install dependencies
   mkdir -p $venv /tmp/piptemp $builddir/etc
@@ -76,10 +81,9 @@ build() {
   do
     if [ -d $i ]; then
   
-      svc=$i
+      svc=`echo $i | sed s/-.*//`
 
       [ -e $i/tools/pip-requires ] && $venv/bin/pip install --download-cache /tmp/piptemp -r $i/tools/pip-requires
-      [[ $svc == nova ]] && $venv/bin/pip install keystone
     
       pushd $i
       $venv/bin/python setup.py build
@@ -97,7 +101,7 @@ build() {
 package() {
   for i in ${_components[*]}; do
     svc=$i
-    pushd $srcdir/$svc
+    pushd $srcdir/$svc*
     $venv/bin/python setup.py install --optimize=1
     if [ ! -d etc/$svc ] 
     then

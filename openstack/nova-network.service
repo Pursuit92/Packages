@@ -2,7 +2,7 @@
 Description=Nova Network Service
 
 [Service]
-ExecStart=/opt/openstack-essex/nova/bin/nova-network
+ExecStart=/opt/openstack-essex/bin/nova-network
 Restart=always
 
 [Install]
