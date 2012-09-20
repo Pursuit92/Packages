@@ -2,7 +2,7 @@
 Description=Nova API Service
 
 [Service]
-ExecStart=/opt/openstack-essex/bin/nova-volume
+ExecStart=/opt/openstack/bin/nova-volume
 Restart=always
 
 [Install]

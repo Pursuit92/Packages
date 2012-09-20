@@ -2,7 +2,7 @@
 Description=Keystone Identity Service
 
 [Service]
-ExecStart=/opt/openstack-essex/bin/keystone-all
+ExecStart=/opt/openstack/bin/keystone-all
 Restart=always
 
 [Install]

@@ -3,7 +3,7 @@ Description=Nova API Service
 Wants=libvirt.service
 
 [Service]
-ExecStart=/opt/openstack-essex/bin/nova-compute
+ExecStart=/opt/openstack/bin/nova-compute
 Restart=always
 
 [Install]

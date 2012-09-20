@@ -47,17 +47,17 @@ md5sums=('e829334fc8ba90160c59801ff372d003'
          '544496fde64a341a4f39e15f4b258093'
          '026dfa10e37108b75b92d39cbc449bd0'
 #         '785ae9ba4e1f6fc256cd6a697bb2861f'
-          '07b389badd602f3e190ff449bf92fb51'
-          'f9c28f7581bffa1265024e86ddb06dc8'
-          '902637f1d46089e8279c51825f958099'
-          '7f01a6291565bb19e4e0575dffd48826'
-          '46a6a2efaf91090834b126b2d5c1f4ee'
-          'd16a6d9830c16eafb637aeeb1b2fe532'
-          'e449bc9cf342b664c2ffa511ad6ff54b'
-          '7a374a4f65694167cad39b1698270897'
-          'e1594716f862bc0fb04a4d02f5c35740'
-          '67971cad4ee2da21e382a87bef392162'
-          '5691cd8ca2636718c8c715389ae26978')
+         '3750be6bb2d87bfe65e7f3f494fb4acb'
+         '5c9506f59e36c805dcde85b2b3ff70c5'
+         'f4bee2af83f7b7931ae325005a2729b8'
+         '458528a5b7dca079b7d87ea5ec561a8c'
+         '13ccd49547fadcc50f218c4973fd17ca'
+         '96b5da3d49f31ac46e406e8f5469cfa8'
+         '9110f0690e3dfc7a1a352999e54798eb'
+         'c5f478bd701c5eeaacca49e5159cdd9c'
+         'f78182485d9570c5e1dbb6442d35b30e'
+         'a00cb806dcfec916cd717c009312b0de'
+         '04cf5aadeb06ac61cb4dd82856d8cab4')
 makedepends=('python2-virtualenv')
 
 builddir=$srcdir/../build

@@ -2,7 +2,7 @@
 Description=Nova Console Auth Service
 
 [Service]
-ExecStart=/opt/openstack-essex/bin/nova-consoleauth
+ExecStart=/opt/openstack/bin/nova-consoleauth
 Restart=always
 
 [Install]

@@ -2,7 +2,7 @@
 Description=Nova Console Service
 
 [Service]
-ExecStart=/opt/openstack-essex/bin/nova-console
+ExecStart=/opt/openstack/bin/nova-console
 Restart=always
 
 [Install]
