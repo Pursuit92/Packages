@@ -97,7 +97,7 @@ build() {
     fi
   done
 
-  $venv/bin/pip install python-keystoneclient
+  $venv/bin/pip install python-keystoneclient mysql-python
 
   popd
 }
